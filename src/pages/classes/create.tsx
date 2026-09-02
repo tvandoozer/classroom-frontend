@@ -45,6 +45,7 @@ const Create = () => {
   });
 
   const {
+    refineCore: { onFinish },
     handleSubmit,
     formState: { isSubmitting, errors },
     control,
@@ -52,49 +53,32 @@ const Create = () => {
 
   const onSubmit = async (values: z.infer<typeof classSchema>) => {
     try {
-      console.log(values);
+      await onFinish(values);
     } catch (error) {
       console.error("Error creating class:", error);
     }
   };
 
-  const teachers = [
-    {
-      id: "1",
-      name: "John Doe",
+  const { query: subjectsQuery } = useList<Subject>({
+    resource: "subjects",
+    pagination: {
+      pageSize: 100,
     },
-    {
-      id: "2",
-      name: "Jane Smith",
-    },
-    {
-      id: "3",
-      name: "Dr. Alan Turing",
-    },
-  ];
+  });
 
-  const subjects = [
-    {
-      id: 1,
-      name: "Mathematics",
-      code: "MATH",
+  const { query: teachersQuery } = useList<User>({
+    resource: "users",
+    filters: [{ field: "role", operator: "eq", value: "teacher" }],
+    pagination: {
+      pageSize: 100,
     },
-    {
-      id: 2,
-      name: "Computer Science",
-      code: "CS",
-    },
-    {
-      id: 3,
-      name: "Physics",
-      code: "PHY",
-    },
-    {
-      id: 4,
-      name: "Chemistry",
-      code: "CHEM",
-    },
-  ];
+  });
+
+  const subjects = subjectsQuery?.data?.data || [];
+  const subjectsLoading = subjectsQuery.isLoading;
+
+  const teachers = teachersQuery?.data?.data || [];
+  const teachersLoading = teachersQuery.isLoading;
 
   const bannerPublicId = form.watch("bannerCldPubId");
 
@@ -194,6 +178,7 @@ const Create = () => {
                         <Select
                           onValueChange={(value) => field.onChange(Number(value))}
                           value={field?.value?.toString()}
+                          disabled={subjectsLoading}
                         >
                           <FormControl>
                             <SelectTrigger className="w-full">
@@ -222,8 +207,9 @@ const Create = () => {
                           Teacher <span className="text-red-700">*</span>
                         </FormLabel>
                         <Select
-                          onValueChange={(value) => field.onChange(Number(value))}
+                          onValueChange={field.onChange}
                           value={field?.value?.toString()}
+                          disabled={teachersLoading}
                         >
                           <FormControl>
                             <SelectTrigger className="w-full">
